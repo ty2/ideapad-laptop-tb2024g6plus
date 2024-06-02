@@ -1104,7 +1104,9 @@ static const struct key_entry ideapad_keymap[] = {
 	{ KE_KEY,	0x27 | IDEAPAD_WMI_KEY, { KEY_HELP } },
 	/* Refresh Rate Toggle */
 	{ KE_KEY,	0x0a | IDEAPAD_WMI_KEY, { KEY_REFRESH_RATE_TOGGLE } },
-
+	/* Touchpad Toggle */
+	{ KE_KEY,  0x29 | IDEAPAD_WMI_KEY, { KEY_TOUCHPAD_TOGGLE } },
+	
 	{ KE_END },
 };
 
@@ -1555,6 +1557,7 @@ static void ideapad_acpi_notify(acpi_handle handle, u32 event, void *data)
 			break;
 		case KBD_BL_KBLC_CHANGED_EVENT:
 		case 1:
+		case 0:
 			/*
 			 * Some IdeaPads report event 1 every ~20
 			 * seconds while on battery power; some
@@ -1563,8 +1566,6 @@ static void ideapad_acpi_notify(acpi_handle handle, u32 event, void *data)
 			 * backlight has changed.
 			 */
 			ideapad_kbd_bl_notify(priv);
-			break;
-		case 0:
 			ideapad_check_special_buttons(priv);
 			break;
 		default:
@@ -1763,6 +1764,7 @@ static const struct wmi_device_id ideapad_wmi_ids[] = {
 	{ "26CAB2E5-5CF1-46AE-AAC3-4A12B6BA50E6", &ideapad_wmi_context_esc }, /* Yoga 3 */
 	{ "56322276-8493-4CE8-A783-98C991274F5E", &ideapad_wmi_context_esc }, /* Yoga 700 */
 	{ "8FC0DE0C-B4E4-43FD-B0F3-8871711C1294", &ideapad_wmi_context_fn_keys }, /* Legion 5 */
+	{ "46f16367-fb9d-11ee-a4f6-40c2ba4a5625", &ideapad_wmi_context_esc }, /* Legion 5 */
 	{},
 };
 MODULE_DEVICE_TABLE(wmi, ideapad_wmi_ids);
