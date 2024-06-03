@@ -1508,8 +1508,12 @@ static void ideapad_acpi_notify(acpi_handle handle, u32 event, void *data)
 	struct ideapad_private *priv = data;
 	unsigned long vpc1, vpc2, bit;
 
-	dev_info(&priv->platform_device->dev,
-				 "event: %lu\n", (unsigned long)event);
+	acpi_handle_info(handle, "event: %lu\n",
+					(unsigned long)event);
+	
+	if(!data)
+		acpi_handle_info(handle, "no data");
+
 	return;
 	if (priv->suspended)
 		return;
@@ -1624,6 +1628,7 @@ static const struct dmi_system_id hw_rfkill_list[] = {
 static const struct dmi_system_id ctrl_ps2_aux_port_list[] = {
 	{
 	/* Lenovo Ideapad Z570 */
+
 	.matches = {
 		DMI_MATCH(DMI_SYS_VENDOR, "LENOVO"),
 		DMI_MATCH(DMI_PRODUCT_VERSION, "Ideapad Z570"),
@@ -1725,11 +1730,14 @@ static void ideapad_wmi_notify(struct wmi_device *wdev, union acpi_object *data)
 	if (!priv)
 		goto unlock;
 
+	dev_info(&wdev->dev, "WMI fn-key event: 0x%llx\n", data->integer.value);
 	switch (wpriv->event) {
 	case IDEAPAD_WMI_EVENT_ESC:
+		dev_info(&wdev->dev, "IDEAPAD_WMI_EVENT_ESC\n");
 		ideapad_input_report(priv, 128);
 		break;
 	case IDEAPAD_WMI_EVENT_FN_KEYS:
+		dev_info(&wdev->dev, "IDEAPAD_WMI_EVENT_FN_KEYS\n");
 		if (priv->features.set_fn_lock_led &&
 		    !eval_hals(priv->adev->handle, &result)) {
 			bool state = test_bit(HALS_FNLOCK_STATE_BIT, &result);
@@ -1768,6 +1776,7 @@ static const struct wmi_device_id ideapad_wmi_ids[] = {
 	{ "56322276-8493-4CE8-A783-98C991274F5E", &ideapad_wmi_context_esc }, /* Yoga 700 */
 	{ "8FC0DE0C-B4E4-43FD-B0F3-8871711C1294", &ideapad_wmi_context_fn_keys }, /* Legion 5 */
 	{ "46f16367-fb9d-11ee-a4f6-40c2ba4a5625", &ideapad_wmi_context_esc }, /* ThinkBook 16+ 2024 IMH */
+	{ "077c4a1f-e344-11ee-a4f6-40c2ba413e67", &ideapad_wmi_context_esc }, /* ThinkBook 2024 AMD */
 	{},
 };
 MODULE_DEVICE_TABLE(wmi, ideapad_wmi_ids);
