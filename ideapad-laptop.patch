@@ -1,4 +1,5 @@
---- ideapad-laptop-tb2024g6plus.c	2024-06-01 16:13:33.989650246 +0800
+--- ideapad-laptop.c	2024-06-01 17:01:01.579446067 +0800
++++ ideapad-laptop-tb2024g6plus.c	2024-06-03 11:16:18.007387110 +0800
 @@ -31,7 +31,7 @@
  #include <linux/sysfs.h>
  #include <linux/types.h>
@@ -7,16 +8,27 @@
 +#include "ideapad-laptop-tb2024g6plus.h"
  
  #include <acpi/video.h>
-
+ 
 @@ -152,6 +152,7 @@
-		struct led_classdev led;
-		unsigned int last_brightness;
-	} kbd_bl;
+ 		struct led_classdev led;
+ 		unsigned int last_brightness;
+ 	} kbd_bl;
 +	bool suspended;
  };
  
  static bool no_bt_rfkill;
-@@ -1505,6 +1506,9 @@
+@@ -1103,7 +1104,9 @@
+ 	{ KE_KEY,	0x27 | IDEAPAD_WMI_KEY, { KEY_HELP } },
+ 	/* Refresh Rate Toggle */
+ 	{ KE_KEY,	0x0a | IDEAPAD_WMI_KEY, { KEY_REFRESH_RATE_TOGGLE } },
+-
++	/* Touchpad Toggle */
++	{ KE_KEY,  0x29 | IDEAPAD_WMI_KEY, { KEY_TOUCHPAD_TOGGLE } },
++	
+ 	{ KE_END },
+ };
+ 
+@@ -1505,6 +1508,9 @@
  	struct ideapad_private *priv = data;
  	unsigned long vpc1, vpc2, bit;
  
@@ -26,7 +38,32 @@
  	if (read_ec_data(handle, VPCCMD_R_VPC1, &vpc1))
  		return;
  
-@@ -1931,10 +1935,19 @@
+@@ -1551,6 +1557,7 @@
+ 			break;
+ 		case KBD_BL_KBLC_CHANGED_EVENT:
+ 		case 1:
++		case 0:
+ 			/*
+ 			 * Some IdeaPads report event 1 every ~20
+ 			 * seconds while on battery power; some
+@@ -1559,8 +1566,6 @@
+ 			 * backlight has changed.
+ 			 */
+ 			ideapad_kbd_bl_notify(priv);
+-			break;
+-		case 0:
+ 			ideapad_check_special_buttons(priv);
+ 			break;
+ 		default:
+@@ -1759,6 +1764,7 @@
+ 	{ "26CAB2E5-5CF1-46AE-AAC3-4A12B6BA50E6", &ideapad_wmi_context_esc }, /* Yoga 3 */
+ 	{ "56322276-8493-4CE8-A783-98C991274F5E", &ideapad_wmi_context_esc }, /* Yoga 700 */
+ 	{ "8FC0DE0C-B4E4-43FD-B0F3-8871711C1294", &ideapad_wmi_context_fn_keys }, /* Legion 5 */
++	{ "46f16367-fb9d-11ee-a4f6-40c2ba4a5625", &ideapad_wmi_context_esc }, /* ThinkBook 16+ 2024 IMH */
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(wmi, ideapad_wmi_ids);
+@@ -1931,10 +1937,19 @@
  	if (priv->dytc)
  		dytc_profile_refresh(priv);
  
