@@ -1508,6 +1508,9 @@ static void ideapad_acpi_notify(acpi_handle handle, u32 event, void *data)
 	struct ideapad_private *priv = data;
 	unsigned long vpc1, vpc2, bit;
 
+	dev_info(&priv->platform_device->dev,
+				 "event: %lu\n", (unsigned long)event);
+	return;
 	if (priv->suspended)
 		return;
 
