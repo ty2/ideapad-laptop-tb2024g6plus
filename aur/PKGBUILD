@@ -40,7 +40,7 @@ package() {
   sed -i "s/PACKAGE_VERSION=.*/PACKAGE_VERSION=\"${pkgver}\"/g" "${_dkms_dest}"/dkms.conf
 
   # copy module blacklist
-  install -Dm644 "${srcdir}"/"${_repo}"/dkms/blacklist-ideapad-laptop-tp2024g6plus-dkms.conf \
-  "${pkgdir}"/etc/modprobe.d/blacklist-ideapad-laptop-tp2024g6plus-dkms.conf
+  install -Dm644 "${srcdir}"/"${_repo}"/dkms/blacklist-ideapad-laptop.conf \
+  "${pkgdir}"/etc/modprobe.d/blacklist-ideapad-laptop.conf
   
 }
