@@ -19,9 +19,9 @@ install:
 	sudo insmod ideapad-laptop-tb2024g6plus.ko
 
 install-dkms:
-	# Blacklist ideapad-laptop module
+	# Blacklist current ideapad-laptop module
 	cp dkms/$(BLACKLIST_MODULE_CONF) /etc/modprobe.d/$(BLACKLIST_MODULE_CONF)
-	# Install module
+	# Install patched ideapad-laptop module
 	install -Dm644 dkms/dkms.conf /usr/src/$(MODULE_DIR)/dkms.conf
 	cp -r . /usr/src/$(MODULE_DIR)
 	dkms add -m $(MODULE_NAME)/$(MODULE_VERSION)
@@ -30,7 +30,7 @@ install-dkms:
 uninstall-dkms:
 	# Delete blacklist for ideapad-laptop module
 	rm -f /etc/modprobe.d/$(BLACKLIST_MODULE_CONF)
-	# Uninstall from dkms
+	# Uninstall patched module
 	dkms remove $(MODULE_NAME)/$(MODULE_VERSION) --all
 	rm -rf /usr/src/$(MODULE_DIR)
 
