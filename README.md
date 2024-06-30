@@ -2,7 +2,9 @@
 
 This kernel module solves problem with laptop turning off after closing the lid.
 
-Tested on archlinux and Ubuntu 24.04 6.9 kernel.
+Tested and works on:
+
+- Thinkbook 2024 16+ IMH with Ubuntu 24.04 with kernel 6.9.3-060903-generic
 
 ## Build
 
@@ -12,16 +14,18 @@ Just run:
 make
 ```
 
-## Install
+## Usage
 
-Run
+### Install via dkms
 
 ```shell
-make install
+sudo make install-dkms
+sudo reboot
 ```
 
-## Install via DKMS
+### Uninstall via dkms
 
 ```shell
-make install-dkms
+sudo make uninstall-dkms
+sudo reboot
 ```
