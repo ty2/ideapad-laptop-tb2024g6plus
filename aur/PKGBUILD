@@ -3,8 +3,8 @@
 _repo=ideapad-laptop-tb2024g6plus
 _module_name=ideapad-laptop-tb2024g6plus
 pkgname=${_module_name}-dkms
-pkgver=6.9.r0.g19bf5c8
-pkgrel=1
+pkgver=6.10.r1.g19bf5c8
+pkgrel=2
 pkgdesc="The IdeaPad ACPI Extras kernel modules for ThinkBook 2024 G6+ (DKMS)"
 url="https://github.com/ty2/${_repo}"
 arch=('any')
@@ -13,7 +13,7 @@ depends=('dkms')
 makedepends=('git')
 provides=("${_module_name}=${pkgver}")
 conflicts=("${_module_name}")
-source=("git+https://github.com/ty2/${_repo}#tag=6.9")
+source=("git+https://github.com/ty2/${_repo}#tag=6.10")
 sha256sums=('SKIP')
 
 pkgver() {
