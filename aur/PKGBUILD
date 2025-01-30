@@ -3,8 +3,8 @@
 _repo=ideapad-laptop-tb2024g6plus
 _module_name=ideapad-laptop-tb2024g6plus
 pkgname=${_module_name}-dkms
-pkgver=6.10.r1.g19bf5c8
-pkgrel=2
+pkgver=6.13.r0.g4dd1d6e
+pkgrel=3
 pkgdesc="The IdeaPad ACPI Extras kernel modules for ThinkBook 2024 G6+ (DKMS)"
 url="https://github.com/ty2/${_repo}"
 arch=('any')
@@ -13,13 +13,13 @@ depends=('dkms')
 makedepends=('git')
 provides=("${_module_name}=${pkgver}")
 conflicts=("${_module_name}")
-source=("git+https://github.com/ty2/${_repo}#tag=6.10")
+source=("git+https://github.com/ty2/${_repo}#tag=6.13")
 sha256sums=('SKIP')
 
 pkgver() {
   cd "${srcdir}"/"$_repo" || exit
   ( set -o pipefail
-    git describe --long --abbrev=7 2>/dev/null | sed 's/\([^-]*-g\)/r\1/;s/-/./g' ||
+    git describe --tags --long --abbrev=7 2>/dev/null | sed 's/\([^-]*-g\)/r\1/;s/-/./g' ||
     printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
   )
 }
