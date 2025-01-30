@@ -3,7 +3,7 @@ KVERSION := $(shell uname -r)
 KERNEL_DIR = /lib/modules/$(KVERSION)
 
 MODULE_NAME = ideapad-laptop-tb2024g6plus
-MODULE_VERSION = 6.10
+MODULE_VERSION = 6.13
 MODULE_DIR = $(MODULE_NAME)-$(MODULE_VERSION)
 
 BLACKLIST_MODULE_CONF = blacklist-ideapad-laptop.conf
@@ -35,8 +35,8 @@ uninstall-dkms:
 	rm -rf /usr/src/$(MODULE_DIR)
 
 sync-source:
-	curl -L -o ideapad-laptop.h https://github.com/torvalds/linux/raw/v6.10/drivers/platform/x86/ideapad-laptop.h
-	curl -L -o ideapad-laptop.c https://github.com/torvalds/linux/raw/v6.10/drivers/platform/x86/ideapad-laptop.c
+	curl -L -o ideapad-laptop.h https://github.com/torvalds/linux/raw/v6.13/drivers/platform/x86/ideapad-laptop.h
+	curl -L -o ideapad-laptop.c https://github.com/torvalds/linux/raw/v6.13/drivers/platform/x86/ideapad-laptop.c
 	cp ideapad-laptop.h ideapad-laptop-tb2024g6plus.h
 	cp ideapad-laptop.c ideapad-laptop-tb2024g6plus.c
 

@@ -1,6 +1,6 @@
---- ideapad-laptop.c	2024-07-15 17:18:54.301355610 +0800
-+++ ideapad-laptop-tb2024g6plus.c	2024-07-15 17:55:52.803203982 +0800
-@@ -31,7 +31,7 @@
+--- ideapad-laptop.c	2025-01-30 14:22:43.627615347 +0800
++++ ideapad-laptop-tb2024g6plus.c	2025-01-30 14:24:24.727380152 +0800
+@@ -32,7 +32,7 @@
  #include <linux/sysfs.h>
  #include <linux/types.h>
  #include <linux/wmi.h>
@@ -9,7 +9,7 @@
  
  #include <acpi/video.h>
  
-@@ -157,6 +157,7 @@
+@@ -188,6 +188,7 @@
  		struct led_classdev led;
  		unsigned int last_brightness;
  	} fn_lock;
@@ -17,28 +17,26 @@
  };
  
  static bool no_bt_rfkill;
-@@ -1140,7 +1141,9 @@
- 	{ KE_KEY,	0x27 | IDEAPAD_WMI_KEY, { KEY_HELP } },
- 	/* Refresh Rate Toggle */
- 	{ KE_KEY,	0x0a | IDEAPAD_WMI_KEY, { KEY_REFRESH_RATE_TOGGLE } },
--
+@@ -1297,6 +1298,8 @@
+ 	/* Specific to some newer models */
+ 	{ KE_KEY,	0x3e | IDEAPAD_WMI_KEY, { KEY_MICMUTE } },
+ 	{ KE_KEY,	0x3f | IDEAPAD_WMI_KEY, { KEY_RFKILL } },
 +	/* Touchpad Toggle */
 +	{ KE_KEY,  0x29 | IDEAPAD_WMI_KEY, { KEY_TOUCHPAD_TOGGLE } },
-+	
+ 
  	{ KE_END },
  };
- 
-@@ -1604,6 +1607,9 @@
+@@ -1845,6 +1848,9 @@
  	struct ideapad_private *priv = data;
  	unsigned long vpc1, vpc2, bit;
  
-+	if (priv->suspended)
-+		return;
++    if (priv->suspended)
++    		return;
 +
- 	if (read_ec_data(handle, VPCCMD_R_VPC1, &vpc1))
- 		return;
- 
-@@ -1649,6 +1655,7 @@
+ 	scoped_guard(mutex, &priv->vpc_mutex) {
+ 		if (read_ec_data(handle, VPCCMD_R_VPC1, &vpc1))
+ 			return;
+@@ -1892,6 +1898,7 @@
  			ideapad_backlight_notify_power(priv);
  			break;
  		case KBD_BL_KBLC_CHANGED_EVENT:
@@ -46,7 +44,7 @@
  		case 1:
  			/*
  			 * Some IdeaPads report event 1 every ~20
-@@ -1658,8 +1665,6 @@
+@@ -1901,8 +1908,6 @@
  			 * backlight has changed.
  			 */
  			ideapad_kbd_bl_notify(priv);
@@ -55,7 +53,7 @@
  			ideapad_check_special_buttons(priv);
  			break;
  		default:
-@@ -1863,6 +1868,7 @@
+@@ -2106,6 +2111,7 @@
  	{ "26CAB2E5-5CF1-46AE-AAC3-4A12B6BA50E6", &ideapad_wmi_context_esc }, /* Yoga 3 */
  	{ "56322276-8493-4CE8-A783-98C991274F5E", &ideapad_wmi_context_esc }, /* Yoga 700 */
  	{ "8FC0DE0C-B4E4-43FD-B0F3-8871711C1294", &ideapad_wmi_context_fn_keys }, /* Legion 5 */
@@ -63,7 +61,7 @@
  	{},
  };
  MODULE_DEVICE_TABLE(wmi, ideapad_wmi_ids);
-@@ -2045,10 +2051,19 @@
+@@ -2296,10 +2302,19 @@
  	if (priv->dytc)
  		dytc_profile_refresh(priv);
  
@@ -84,3 +82,10 @@
  
  static const struct acpi_device_id ideapad_device_ids[] = {
  	{"VPC2004", 0},
+@@ -2344,4 +2359,4 @@
+ 
+ MODULE_AUTHOR("David Woodhouse <dwmw2@infradead.org>");
+ MODULE_DESCRIPTION("IdeaPad ACPI Extras");
+-MODULE_LICENSE("GPL");
++MODULE_LICENSE("GPL");
+\ No newline at end of file
