@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
+	// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  *  ideapad-laptop.c - Lenovo IdeaPad ACPI Extras
  *
@@ -32,7 +32,7 @@
 #include <linux/sysfs.h>
 #include <linux/types.h>
 #include <linux/wmi.h>
-#include "ideapad-laptop.h"
+#include "ideapad-laptop-tb2024g6plus.h"
 
 #include <acpi/video.h>
 
@@ -188,6 +188,7 @@ struct ideapad_private {
 		struct led_classdev led;
 		unsigned int last_brightness;
 	} fn_lock;
+	bool suspended;
 };
 
 static bool no_bt_rfkill;
@@ -1297,6 +1298,8 @@ static const struct key_entry ideapad_keymap[] = {
 	/* Specific to some newer models */
 	{ KE_KEY,	0x3e | IDEAPAD_WMI_KEY, { KEY_MICMUTE } },
 	{ KE_KEY,	0x3f | IDEAPAD_WMI_KEY, { KEY_RFKILL } },
+	/* Touchpad Toggle */
+	{ KE_KEY,  0x29 | IDEAPAD_WMI_KEY, { KEY_TOUCHPAD_TOGGLE } },
 
 	{ KE_END },
 };
@@ -1845,6 +1848,9 @@ static void ideapad_acpi_notify(acpi_handle handle, u32 event, void *data)
 	struct ideapad_private *priv = data;
 	unsigned long vpc1, vpc2, bit;
 
+    if (priv->suspended)
+    		return;
+
 	scoped_guard(mutex, &priv->vpc_mutex) {
 		if (read_ec_data(handle, VPCCMD_R_VPC1, &vpc1))
 			return;
@@ -1892,6 +1898,7 @@ static void ideapad_acpi_notify(acpi_handle handle, u32 event, void *data)
 			ideapad_backlight_notify_power(priv);
 			break;
 		case KBD_BL_KBLC_CHANGED_EVENT:
+		case 0:
 		case 1:
 			/*
 			 * Some IdeaPads report event 1 every ~20
@@ -1901,8 +1908,6 @@ static void ideapad_acpi_notify(acpi_handle handle, u32 event, void *data)
 			 * backlight has changed.
 			 */
 			ideapad_kbd_bl_notify(priv);
-			break;
-		case 0:
 			ideapad_check_special_buttons(priv);
 			break;
 		default:
@@ -2106,6 +2111,7 @@ static const struct wmi_device_id ideapad_wmi_ids[] = {
 	{ "26CAB2E5-5CF1-46AE-AAC3-4A12B6BA50E6", &ideapad_wmi_context_esc }, /* Yoga 3 */
 	{ "56322276-8493-4CE8-A783-98C991274F5E", &ideapad_wmi_context_esc }, /* Yoga 700 */
 	{ "8FC0DE0C-B4E4-43FD-B0F3-8871711C1294", &ideapad_wmi_context_fn_keys }, /* Legion 5 */
+	{ "46f16367-fb9d-11ee-a4f6-40c2ba4a5625", &ideapad_wmi_context_esc }, /* ThinkBook 16+ 2024 IMH */
 	{},
 };
 MODULE_DEVICE_TABLE(wmi, ideapad_wmi_ids);
@@ -2296,10 +2302,19 @@ static int ideapad_acpi_resume(struct device *dev)
 	if (priv->dytc)
 		dytc_profile_refresh(priv);
 
+	priv->suspended = false;
+
+	return 0;
+}
+
+static int ideapad_acpi_suspended(struct device *dev)
+{
+	struct ideapad_private *priv = dev_get_drvdata(dev);
+	priv->suspended = true;
 	return 0;
 }
 #endif
-static SIMPLE_DEV_PM_OPS(ideapad_pm, NULL, ideapad_acpi_resume);
+static SIMPLE_DEV_PM_OPS(ideapad_pm, ideapad_acpi_suspended, ideapad_acpi_resume);
 
 static const struct acpi_device_id ideapad_device_ids[] = {
 	{"VPC2004", 0},
