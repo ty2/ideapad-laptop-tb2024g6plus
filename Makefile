@@ -3,7 +3,7 @@ KVERSION := $(shell uname -r)
 KERNEL_DIR = /lib/modules/$(KVERSION)
 
 MODULE_NAME = ideapad-laptop-tb2024g6plus
-MODULE_VERSION = 6.13
+MODULE_VERSION = 6.14
 MODULE_DIR = $(MODULE_NAME)-$(MODULE_VERSION)
 
 BLACKLIST_MODULE_CONF = blacklist-ideapad-laptop.conf
