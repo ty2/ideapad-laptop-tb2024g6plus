@@ -1,4 +1,4 @@
-	// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  *  ideapad-laptop.c - Lenovo IdeaPad ACPI Extras
  *
@@ -142,7 +142,7 @@ enum {
 
 struct ideapad_dytc_priv {
 	enum platform_profile_option current_profile;
-	struct platform_profile_handler pprof;
+	struct device *ppdev; /* platform profile device */
 	struct mutex mutex; /* protects the DYTC interface */
 	struct ideapad_private *priv;
 };
@@ -934,10 +934,10 @@ static int convert_profile_to_dytc(enum platform_profile_option profile, int *pe
  * dytc_profile_get: Function to register with platform_profile
  * handler. Returns current platform profile.
  */
-static int dytc_profile_get(struct platform_profile_handler *pprof,
+static int dytc_profile_get(struct device *dev,
 			    enum platform_profile_option *profile)
 {
-	struct ideapad_dytc_priv *dytc = container_of(pprof, struct ideapad_dytc_priv, pprof);
+	struct ideapad_dytc_priv *dytc = dev_get_drvdata(dev);
 
 	*profile = dytc->current_profile;
 	return 0;
@@ -987,10 +987,10 @@ static int dytc_cql_command(struct ideapad_private *priv, unsigned long cmd,
  * dytc_profile_set: Function to register with platform_profile
  * handler. Sets current platform profile.
  */
-static int dytc_profile_set(struct platform_profile_handler *pprof,
+static int dytc_profile_set(struct device *dev,
 			    enum platform_profile_option profile)
 {
-	struct ideapad_dytc_priv *dytc = container_of(pprof, struct ideapad_dytc_priv, pprof);
+	struct ideapad_dytc_priv *dytc = dev_get_drvdata(dev);
 	struct ideapad_private *priv = dytc->priv;
 	unsigned long output;
 	int err;
@@ -1024,6 +1024,15 @@ static int dytc_profile_set(struct platform_profile_handler *pprof,
 	return -EINTR;
 }
 
+static int dytc_profile_probe(void *drvdata, unsigned long *choices)
+{
+	set_bit(PLATFORM_PROFILE_LOW_POWER, choices);
+	set_bit(PLATFORM_PROFILE_BALANCED, choices);
+	set_bit(PLATFORM_PROFILE_PERFORMANCE, choices);
+
+	return 0;
+}
+
 static void dytc_profile_refresh(struct ideapad_private *priv)
 {
 	enum platform_profile_option profile;
@@ -1042,7 +1051,7 @@ static void dytc_profile_refresh(struct ideapad_private *priv)
 
 	if (profile != priv->dytc->current_profile) {
 		priv->dytc->current_profile = profile;
-		platform_profile_notify();
+		platform_profile_notify(priv->dytc->ppdev);
 	}
 }
 
@@ -1062,6 +1071,12 @@ static const struct dmi_system_id ideapad_dytc_v4_allow_table[] = {
 		}
 	},
 	{}
+};
+
+static const struct platform_profile_ops dytc_profile_ops = {
+	.probe = dytc_profile_probe,
+	.profile_get = dytc_profile_get,
+	.profile_set = dytc_profile_set,
 };
 
 static int ideapad_dytc_profile_init(struct ideapad_private *priv)
@@ -1104,18 +1119,15 @@ static int ideapad_dytc_profile_init(struct ideapad_private *priv)
 	mutex_init(&priv->dytc->mutex);
 
 	priv->dytc->priv = priv;
-	priv->dytc->pprof.profile_get = dytc_profile_get;
-	priv->dytc->pprof.profile_set = dytc_profile_set;
-
-	/* Setup supported modes */
-	set_bit(PLATFORM_PROFILE_LOW_POWER, priv->dytc->pprof.choices);
-	set_bit(PLATFORM_PROFILE_BALANCED, priv->dytc->pprof.choices);
-	set_bit(PLATFORM_PROFILE_PERFORMANCE, priv->dytc->pprof.choices);
 
 	/* Create platform_profile structure and register */
-	err = platform_profile_register(&priv->dytc->pprof);
-	if (err)
+	priv->dytc->ppdev = devm_platform_profile_register(&priv->platform_device->dev,
+							   "ideapad-laptop", priv->dytc,
+							   &dytc_profile_ops);
+	if (IS_ERR(priv->dytc->ppdev)) {
+		err = PTR_ERR(priv->dytc->ppdev);
 		goto pp_reg_failed;
+	}
 
 	/* Ensure initial values are correct */
 	dytc_profile_refresh(priv);
@@ -1135,7 +1147,6 @@ static void ideapad_dytc_profile_exit(struct ideapad_private *priv)
 	if (!priv->dytc)
 		return;
 
-	platform_profile_remove();
 	mutex_destroy(&priv->dytc->mutex);
 	kfree(priv->dytc);
 
@@ -1898,7 +1909,6 @@ static void ideapad_acpi_notify(acpi_handle handle, u32 event, void *data)
 			ideapad_backlight_notify_power(priv);
 			break;
 		case KBD_BL_KBLC_CHANGED_EVENT:
-		case 0:
 		case 1:
 			/*
 			 * Some IdeaPads report event 1 every ~20
@@ -1908,6 +1918,8 @@ static void ideapad_acpi_notify(acpi_handle handle, u32 event, void *data)
 			 * backlight has changed.
 			 */
 			ideapad_kbd_bl_notify(priv);
+			break;
+	case 0:
 			ideapad_check_special_buttons(priv);
 			break;
 		default:
